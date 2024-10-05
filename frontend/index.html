@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Socket.IO Example</title>
+<script src="[invalid URL removed]"></script>
+</head>
+<body>
+<input type="text" id="message">
+<button onclick="sendMessage()">Send</button>
+<div id="messages"></div>
+
+<script>
+var socket = io();
+
+function sendMessage() {
+    var message = document.getElementById('message').value;
+    socket.emit('message', message);
+}
+
+socket.on('response', function(data) {
+    var messages = document.getElementById('messages');
+    messages.innerHTML += data + '<br>';
+});
+</script>
+</body>
+</html>
