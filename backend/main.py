@@ -13,17 +13,17 @@ def index():
 
 # always sends ALL data, assume nothing is persisted in the front end
 
-# logs ordered by who is doing what, independent by time
-# for the dashboard and leaderboard
-# per user grouping 
+# all activity ordered by time
+# for main feed "recent logs"
 @app.route("/activity", methods=['GET'])
 def send_activity_to_client():
     message = [] # dummy data
     socketio.emit('activity', message)
     return jsonify({"activity": "insert picture of new offender here"})
 
-# log 
-# for main feed "recent logs"
+# logs ordered by who is doing what, independent by time
+# for the dashboard and leaderboard
+# per user grouping 
 @app.route("/log", methods=['GET'])
 def send_log_to_client():
     message = [ # dummy data
