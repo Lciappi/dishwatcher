@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO
 from flask_cors import CORS
-from face_recognition import recognize
+from recognize import recognize_faces
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})  # CORS configuration
@@ -48,7 +48,7 @@ def send_activity_to_client():
         },
     ]
     socketio.emit('activity', message)
-    return jsonify({"activity": "insert picture of new offender here"})
+    return jsonify({"activity": message})
 
 # logs ordered by who is doing what, independent by time
 # for the dashboard and leaderboard
@@ -88,7 +88,7 @@ def send_log_to_client():
         }
     ]
     socketio.emit('log', message)
-    return jsonify({"log": "insert picture of new offender here"})
+    return jsonify({"log": message})
 
 # notifications for given user
 @app.route("/notifications/<username>", methods=['GET'])
@@ -100,9 +100,9 @@ def send_notifications_to_client(username):
     # }
     # user_notifications = notifications.get(username, [])
     message = [] # dummy data
-    socketio.emit('notifications', )
-    return jsonify({"notifications": user_notifications})
+    socketio.emit('notifications', message)
+    return jsonify({"notifications": message})
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, port=8080, host='0.0.0.0')
-    recognize()
+    recognize_faces()
