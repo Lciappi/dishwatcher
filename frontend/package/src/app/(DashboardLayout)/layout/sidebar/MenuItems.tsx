@@ -1,10 +1,7 @@
 import {
-  IconAperture,
   IconCopy,
   IconLayoutDashboard,
   IconLogin,
-  IconMoodHappy,
-  IconTypography,
   IconUserPlus,
   IconActivityHeartbeat,
 } from "@tabler/icons-react";
