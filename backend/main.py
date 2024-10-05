@@ -17,7 +17,36 @@ def index():
 # for main feed "recent logs"
 @app.route("/activity", methods=['GET'])
 def send_activity_to_client():
-    message = [] # dummy data
+    message = [
+        {
+            user: 'Leo Ciappi',
+            action: 'cleaned',
+            time: '09:30 am',
+            color: 'primary',
+            variant: 'outlined',
+        },
+        {
+            user: 'Yeojun Han',
+            action: 'contaiminated',
+            time: '09:40 am',
+            color: 'warning',
+            variant: 'outlined',
+        },
+        {
+            user: 'Yeojun Han',
+            action: 'cleaned',
+            time: '09:43 am',
+            color: 'primary',
+            variant: 'outlined',
+        },
+        {
+            user: 'Leo Ciappi',
+            action: 'contaminated',
+            time: '09:50 am',
+            color: 'warning',
+            variant: 'outlined',
+        },
+    ]
     socketio.emit('activity', message)
     return jsonify({"activity": "insert picture of new offender here"})
 
