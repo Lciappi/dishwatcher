@@ -4,10 +4,9 @@ import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Image from 'next/image'
 
-// Function to find the best cleaner
-const findBestCleaner = (roommates) => {
+const findDirtiestRoomate = (roommates) => {
     return roommates.reduce((bestCleaner, roommate) => {
-        const cleanedCount = roommate.logs.filter(log => log.event === 'Cleaned').length;
+        const cleanedCount = roommate.logs.filter(log => log.event === 'Contaminated').length;
 
         if (cleanedCount > (bestCleaner.cleanCount || 0)) {
             return { name: roommate.name, cleanCount: cleanedCount };
@@ -16,20 +15,20 @@ const findBestCleaner = (roommates) => {
     }, {});
 };
 
-const Award = ( {roommates} ) => {
-    const bestCleaner = findBestCleaner(roommates);
+const Unaward = ( {roommates} ) => {
+    const wrostCleaner = findDirtiestRoomate(roommates);
 
     return (
         <DashboardCard>
             <Box sx={{overflow: 'auto', width: {xs: '280px', sm: 'auto'}}}>
                 <center>
                     <div>
-                        <Typography variant='h5'>Congratulations {bestCleaner.name || 'John'}! 🎉</Typography>
-                        <Typography>Cleaned the most this month</Typography>
+                        <Typography variant='h5'>{wrostCleaner.name || 'XXX'} polluted the most ☢️</Typography>
+                        <Typography>Added the most dirty dishes this month.</Typography>
                     </div>
                     <br/>
                     <Image
-                        src='/images/pages/trophy.png'
+                        src='/images/pages/untrophy.png'
                         alt='trophy image'
                         height={102}
                         width={80}
@@ -40,4 +39,4 @@ const Award = ( {roommates} ) => {
     )
 }
 
-export default Award;
+export default Unaward;
