@@ -1,0 +1,12 @@
+services:
+  service1:
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - mode: ingress
+        target: 5000
+        published: 5000
+    environment:
+      - MODEL_PATH=/app/face_detection_model
