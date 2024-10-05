@@ -31,7 +31,7 @@ const Menuitems = [
     id: uniqueId(),
     title: "HealthChecks",
     icon: IconActivityHeartbeat,
-    href: "/utilities/typography",
+    href: "/utilities/healthchecks",
   },
   {
     id: uniqueId(),
