@@ -1,20 +1,22 @@
-
 import dynamic from "next/dynamic";
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 import { useTheme } from '@mui/material/styles';
-import { Stack, Typography, Avatar, Fab } from '@mui/material';
-import { IconArrowDownRight, IconCurrencyDollar } from '@tabler/icons-react';
+import { Stack, Typography, Fab } from '@mui/material';
+import { IconTrash, IconCheck } from '@tabler/icons-react';
+import { useState } from 'react';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
 
 const MonthlyEarnings = () => {
-  // chart color
+  // Chart color
   const theme = useTheme();
   const secondary = theme.palette.secondary.main;
-  const secondarylight = '#f5fcff';
-  const errorlight = '#fdede8';
+  const secondaryLight = '#f5fcff';
 
-  // chart
-  const optionscolumnchart: any = {
+  // State for dirty dishes count
+  const [dirtyDishesCount, setDirtyDishesCount] = useState(0);
+
+  // Chart configuration
+  const optionsColumnChart = {
     chart: {
       type: 'area',
       fontFamily: "'Plus Jakarta Sans', sans-serif;",
@@ -33,7 +35,7 @@ const MonthlyEarnings = () => {
       width: 2,
     },
     fill: {
-      colors: [secondarylight],
+      colors: [secondaryLight],
       type: 'solid',
       opacity: 0.05,
     },
@@ -44,43 +46,50 @@ const MonthlyEarnings = () => {
       theme: theme.palette.mode === 'dark' ? 'dark' : 'light',
     },
   };
-  const seriescolumnchart: any = [
+
+  const seriesColumnChart = [
     {
-      name: '',
+      name: 'Dirty Dishes',
       color: secondary,
-      data: [25, 66, 20, 40, 12, 58, 20],
+      data: [dirtyDishesCount],
     },
   ];
 
+  // Handlers for adding and cleaning dishes
+  const handleAddDirtyDish = () => {
+    setDirtyDishesCount(prevCount => prevCount + 1);
+  };
+
+  const handleCleanDishes = () => {
+    setDirtyDishesCount(0);
+  };
+
+  // @ts-ignore
+  // @ts-ignore
   return (
-    <DashboardCard
-      title="Monthly Earnings"
-      action={
-        <Fab color="secondary" size="medium" sx={{color: '#ffffff'}}>
-          <IconCurrencyDollar width={24} />
-        </Fab>
-      }
-      footer={
-        <Chart options={optionscolumnchart} series={seriescolumnchart} type="area" height={60} width={"100%"} />
-      }
-    >
-      <>
-        <Typography variant="h3" fontWeight="700" mt="-20px">
-          $6,820
-        </Typography>
-        <Stack direction="row" spacing={1} my={1} alignItems="center">
-          <Avatar sx={{ bgcolor: errorlight, width: 27, height: 27 }}>
-            <IconArrowDownRight width={20} color="#FA896B" />
-          </Avatar>
-          <Typography variant="subtitle2" fontWeight="600">
-            +9%
+      <DashboardCard
+          title="Monthly Dish Actions"
+          action={
+            <Stack direction="row" spacing={1}>
+              <Fab color="secondary" size="medium" onClick={handleAddDirtyDish}>
+                <IconTrash width={24} />
+              </Fab>
+              <Fab color="primary" size="medium" onClick={handleCleanDishes}>
+                <IconCheck width={24} />
+              </Fab>
+            </Stack>
+          }
+          footer={
+            //@ts-ignore
+            <Chart options={optionsColumnChart} series={seriesColumnChart} type="area" height={60} width={"100%"} />
+          }
+      >
+        <>
+          <Typography variant="h3" fontWeight="700" mt="-20px">
+            Total Dirty Dishes: {dirtyDishesCount}
           </Typography>
-          <Typography variant="subtitle2" color="textSecondary">
-            last year
-          </Typography>
-        </Stack>
-      </>
-    </DashboardCard>
+        </>
+      </DashboardCard>
   );
 };
 

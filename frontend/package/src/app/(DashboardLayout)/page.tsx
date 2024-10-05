@@ -2,12 +2,76 @@
 import { Grid, Box } from '@mui/material';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 // components
-import SalesOverview from '@/app/(DashboardLayout)/components/dashboard/SalesOverview';
 import RecentTransactions from '@/app/(DashboardLayout)/components/dashboard/RecentTransactions';
 import RoomateBlame from '@/app/(DashboardLayout)/components/dashboard/RoomateBlame';
-import MonthlyEarnings from '@/app/(DashboardLayout)/components/dashboard/MonthlyEarnings';
 import Award from "@/app/(DashboardLayout)/components/dashboard/Award";
 import NotificationComponent from "@/app/(DashboardLayout)/components/notifications/notification";
+import Unaward from "@/app/(DashboardLayout)/components/dashboard/Unaward";
+
+
+const roommates = [
+  {
+    id: "1",
+    name: "Leo Ciappi",
+    logs: [
+      {
+        id: "event",
+        image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+        time: "1:32 PM",
+        event: "Cleaned"
+      },
+      {
+        id: "event",
+        image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+        time: "2:00 AM",
+        event: "Contaminated"
+      },
+      {
+        id: "event",
+        image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+        time: "0:00 PM",
+        event: "Contaminate"
+      },
+    ]
+  },
+
+  {
+    id: "2",
+    name: "Yeojun Han",
+    logs: [
+      {
+        id: "event",
+        image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+        time: "1:54 AM",
+        event: "Contaminated"
+      },
+      {
+        id: "event",
+        image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+        time: "1:54 AM",
+        event: "Contaminated"
+      },
+      {
+        id: "event",
+        image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+        time: "1:54 AM",
+        event: "Contaminated"
+      },
+      {
+        id: "event",
+        image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+        time: "1:54 AM",
+        event: "Contaminated"
+      },
+      {
+        id: "event",
+        image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+        time: "5:21 PM",
+        event: "Contaminate"
+      },
+    ]
+  },
+];
 
 const Dashboard = () => {
   return (
@@ -16,23 +80,20 @@ const Dashboard = () => {
       <Box>
         <Grid container spacing={3}>
           <Grid item xs={12} lg={8}>
-            <SalesOverview />
+            <RecentTransactions />
           </Grid>
           <Grid item xs={12} lg={4}>
             <Grid container spacing={3}>
               <Grid item xs={12}>
-                <Award />
+                <Award roommates={roommates} />
               </Grid>
               <Grid item xs={12}>
-                <MonthlyEarnings />
+                <Unaward roommates={roommates} />
               </Grid>
             </Grid>
           </Grid>
           <Grid item xs={12} lg={12}>
-            <RoomateBlame />
-          </Grid>
-          <Grid item xs={12} lg={4}>
-            <RecentTransactions />
+            <RoomateBlame roommates={roommates} />
           </Grid>
         </Grid>
       </Box>
