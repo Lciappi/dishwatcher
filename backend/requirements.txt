@@ -1,0 +1,3 @@
+uwsgi
+flask
+opencv-python-headless
