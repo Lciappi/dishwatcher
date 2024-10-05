@@ -14,7 +14,7 @@ iniconfig==2.0.0
 itsdangerous==2.2.0
 Jinja2==3.1.4
 MarkupSafe==2.1.5
-numpy==2.1.2
+numpy==1.21.2
 opencv-python==4.10.0.84
 opencv-python-headless==4.10.0.84
 packaging==24.1
