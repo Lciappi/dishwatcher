@@ -2,7 +2,7 @@
 import { Grid, Box } from '@mui/material';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 // components
-import RecentTransactions from '@/app/(DashboardLayout)/components/dashboard/RecentTransactions';
+import RecentActivity from '@/app/(DashboardLayout)/components/dashboard/RecentActivity';
 import RoomateBlame from '@/app/(DashboardLayout)/components/dashboard/RoomateBlame';
 import Award from "@/app/(DashboardLayout)/components/dashboard/Award";
 import NotificationComponent from "@/app/(DashboardLayout)/components/notifications/notification";
@@ -80,7 +80,7 @@ const Dashboard = () => {
       <Box>
         <Grid container spacing={3}>
           <Grid item xs={12} lg={8}>
-            <RecentTransactions />
+            <RecentActivity />
           </Grid>
           <Grid item xs={12} lg={4}>
             <Grid container spacing={3}>
