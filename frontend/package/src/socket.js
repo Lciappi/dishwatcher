@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
 // "undefined" means the URL will be computed from the `window.location` object
-const URL =  'http://localhost:8080';
+const URL =  'https://yeojunh-service1--5000.prod1a.defang.dev/';
 
 export const socket = io(URL);

@@ -7,6 +7,7 @@ import RoomateBlame from '@/app/(DashboardLayout)/components/dashboard/RoomateBl
 import Award from "@/app/(DashboardLayout)/components/dashboard/Award";
 import NotificationComponent from "@/app/(DashboardLayout)/components/notifications/notification";
 import Unaward from "@/app/(DashboardLayout)/components/dashboard/Unaward";
+import CalibrateSink from "@/app/(DashboardLayout)/components/dashboard/CalibrateSink";
 
 
 const roommates = [
@@ -94,6 +95,9 @@ const Dashboard = () => {
           </Grid>
           <Grid item xs={12} lg={12}>
             <RoomateBlame roommates={roommates} />
+          </Grid>
+          <Grid item xs={12} lg={12}>
+            <CalibrateSink />
           </Grid>
         </Grid>
       </Box>
