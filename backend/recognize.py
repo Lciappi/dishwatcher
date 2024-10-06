@@ -5,8 +5,6 @@ from queue import Queue
 from datetime import datetime
 import random
 
-#from main import send_notifications_to_client, send_activity_to_client
-
 # reference: https://github.com/ageitgey/face_recognition
 
 person_in_frame = None
