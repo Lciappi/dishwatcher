@@ -8,73 +8,92 @@ import Award from "@/app/(DashboardLayout)/components/dashboard/Award";
 import NotificationComponent from "@/app/(DashboardLayout)/components/notifications/notification";
 import Unaward from "@/app/(DashboardLayout)/components/dashboard/Unaward";
 import CalibrateSink from "@/app/(DashboardLayout)/components/dashboard/CalibrateSink";
+import {useEffect, useState} from "react";
+import {socket} from "@/socket";
 
 
-const roommates = [
-  {
-    id: "1",
-    name: "Leo Ciappi",
-    logs: [
-      {
-        id: "event",
-        image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
-        time: "1:32 PM",
-        event: "Cleaned"
-      },
-      {
-        id: "event",
-        image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
-        time: "2:00 AM",
-        event: "Contaminated"
-      },
-      {
-        id: "event",
-        image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
-        time: "0:00 PM",
-        event: "Contaminate"
-      },
-    ]
-  },
-
-  {
-    id: "2",
-    name: "Yeojun Han",
-    logs: [
-      {
-        id: "event",
-        image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
-        time: "1:54 AM",
-        event: "Contaminated"
-      },
-      {
-        id: "event",
-        image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
-        time: "1:54 AM",
-        event: "Contaminated"
-      },
-      {
-        id: "event",
-        image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
-        time: "1:54 AM",
-        event: "Contaminated"
-      },
-      {
-        id: "event",
-        image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
-        time: "1:54 AM",
-        event: "Contaminated"
-      },
-      {
-        id: "event",
-        image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
-        time: "5:21 PM",
-        event: "Contaminate"
-      },
-    ]
-  },
-];
+// const roommates = [
+//   {
+//     id: "1",
+//     name: "Leo Ciappi",
+//     logs: [
+//       {
+//         id: "event",
+//         image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+//         time: "1:32 PM",
+//         event: "Cleaned"
+//       },
+//       {
+//         id: "event",
+//         image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+//         time: "2:00 AM",
+//         event: "Contaminated"
+//       },
+//       {
+//         id: "event",
+//         image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+//         time: "0:00 PM",
+//         event: "Contaminate"
+//       },
+//     ]
+//   },
+//
+//   {
+//     id: "2",
+//     name: "Yeojun Han",
+//     logs: [
+//       {
+//         id: "event",
+//         image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+//         time: "1:54 AM",
+//         event: "Contaminated"
+//       },
+//       {
+//         id: "event",
+//         image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+//         time: "1:54 AM",
+//         event: "Contaminated"
+//       },
+//       {
+//         id: "event",
+//         image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+//         time: "1:54 AM",
+//         event: "Contaminated"
+//       },
+//       {
+//         id: "event",
+//         image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+//         time: "1:54 AM",
+//         event: "Contaminated"
+//       },
+//       {
+//         id: "event",
+//         image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+//         time: "5:21 PM",
+//         event: "Contaminate"
+//       },
+//     ]
+//   },
+// ];
 
 const Dashboard = () => {
+
+  const [roommates, setRoommates] = useState([])
+
+  useEffect(() => {
+    // @ts-ignore
+    socket.on('log', (payload) => {
+      console.log("DASHBOARD RECEIVED LOGS", payload);
+      setRoommates(payload);
+    });
+
+    return () => {
+      // @ts-ignore
+      socket.off('activity');
+    };
+  }, []);
+
+
   return (
     <PageContainer title="Dashboard" description="this is Dashboard">
       <NotificationComponent />
@@ -86,7 +105,7 @@ const Dashboard = () => {
           <Grid item xs={12} lg={4}>
             <Grid container spacing={3}>
               <Grid item xs={12}>
-                <Award roommates={roommates} />
+                <Award />
               </Grid>
               <Grid item xs={12}>
                 <Unaward roommates={roommates} />

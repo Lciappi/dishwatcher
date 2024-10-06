@@ -10,6 +10,8 @@ import {
     timelineOppositeContentClasses,
 } from '@mui/lab';
 import {Box} from "@mui/material";
+import {useEffect, useState} from "react";
+import {socket} from "@/socket";
 
 // Message constant to hold the activity data
 const message: any[] = [
@@ -46,7 +48,35 @@ const message: any[] = [
     content: <span>{activity.user} {activity.action}</span> // Create content for each activity
 }));
 
-const RecentActivity: React.FC = () => {
+interface Activity {
+    user: string;
+    action: string;
+    time: string;
+    color: 'primary' | 'warning';
+    variant: 'outlined';
+    content: JSX.Element;
+}
+
+
+function RecentActivity() {
+
+    const [message, setMessage] = useState<any[]>([]);
+
+    useEffect(() => {
+        // @ts-ignore
+        socket.on('activity', (payload: Activity[]) => {
+            setMessage((prev) => payload.map(activity => ({
+                ...activity,
+                content: <span>{activity.user} {activity.action}</span> // Create content for each activity
+            })));
+        });
+
+        return () => {
+            // @ts-ignore
+            socket.off('activity');
+        };
+    }, []);
+
     return (
         <DashboardCard title="Recent Activity">
             <Box sx={{overflow: 'auto', height:382}}>
