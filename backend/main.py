@@ -1,17 +1,32 @@
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO
 from flask_cors import CORS
-from recognize import recognize_faces
+from queue import Queue
+import threading
+from recognize import recognize_faces, calibrate
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})  # CORS configuration
 socketio = SocketIO(app, cors_allowed_origins="http://localhost:3000")  # SocketIO CORS configuration
+
+frame_queue = Queue()
+
+# Start the recognize_faces function in a separate thread
+
+# Start the calibrate function in a separate thread
+# calibrate_thread = threading.Thread(target=calibrate, args=(frame_queue,))
+# calibrate_thread.start()
 
 @app.route('/')
 def index():
     return jsonify({"status": "OK"})
 
 # always sends ALL data, assume nothing is persisted in the front end
+
+@app.route("/calibrate", methods=['POST'])
+def calibrate_sink():
+    calibrate(frame_queue=frame_queue)
+    return jsonify({"status": "Calibration complete"})
 
 # all activity ordered by time
 # for main feed "recent logs"
@@ -104,5 +119,5 @@ def send_notifications_to_client(username):
     return jsonify({"notifications": message})
 
 if __name__ == '__main__':
+    threading.Thread(target=recognize_faces, args=(frame_queue,), daemon=True).start()
     socketio.run(app, debug=True, port=8080, host='0.0.0.0')
-    recognize_faces()
