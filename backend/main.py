@@ -1,6 +1,5 @@
 from queue import Queue
 import threading
-from service import main
 import face_recognition
 import cv2
 import numpy as np
@@ -13,20 +12,21 @@ from flask_cors import CORS
 
 '''
     ================================================================================
-    ENDPOINTS
+    ENDPOINTS                                                                     ||
     ================================================================================
 '''
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})  # CORS configuration
+
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})  # CORS configuration [allow frontend]
 socketio = SocketIO(app, cors_allowed_origins="http://localhost:3000")  # SocketIO CORS configuration
+frame_queue = Queue()
 
 @app.route('/')
 def index():
     return jsonify({"status": "OK"})
 
 # always sends ALL data, assume nothing is persisted in the front end
-
 @app.route("/calibrate", methods=['POST'])
 def calibrate_sink():
     # calibrate(frame_queue=frame_queue)
@@ -112,12 +112,12 @@ def send_log_to_client():
 @app.route("/notifications/", methods=['GET'])
 def send_notifications_to_client(username, action):
     message = {
-        user: username,
-        action: action
+        'user': username,
+        'action': action
     }
 
     socketio.emit('notifications', message)
-    return jsonify({"notifications": message})
+    return jsonify({'notifications': message})
 
 # reference: https://github.com/ageitgey/face_recognition
 '''
@@ -294,6 +294,9 @@ def recognize_faces(frame_queue: Queue):
         global person_in_frame
         if len(face_names) > 0 and person_in_frame != face_names[0]:
             person_in_frame = face_names[0]
+            print("SENDING NOTIFICATION", person_in_frame)
+            app.app_context().push()
+            send_notifications_to_client(person_in_frame, "entered the frame")
             print(person_in_frame)
         elif len(face_names) == 0 and person_in_frame != None:
             person_in_frame = None
@@ -366,7 +369,6 @@ def calibrate(frame_queue: Queue):
     #     break
 
 
-frame_queue = Queue()
 
 if __name__ == '__main__':
     threading.Thread(target=recognize_faces, args=(frame_queue,), daemon=True).start()
