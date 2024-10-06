@@ -10,6 +10,9 @@ from flask import Flask, request, jsonify
 from flask_socketio import SocketIO
 from flask_cors import CORS
 from ultralytics import YOLO
+from io import BytesIO
+from PIL import Image
+import base64
 
 '''
     ================================================================================
@@ -155,6 +158,17 @@ def maybe_initialize_user(user: str):
             }
             activity.append(new_user)
 
+@app.route('/offender', methods=['GET'])
+def get_offender():
+    # Process the image (e.g., resize, convert to base64)
+    img = frame_queue.get(True, 10)
+    img_bytes = BytesIO()
+    image_data = img_bytes.getvalue().decode('base64')
+
+    # Emit the image data to the frontend
+    socketio.emit('image', {'image_data': image_data})
+
+    return jsonify({'message': 'Image uploaded successfully'})
 
 '''
     Gets the user plates
@@ -418,12 +432,16 @@ def recognize_faces(frame_queue: Queue):
                     # object count increased (added object)
                     if person_in_frame and current_object_count > prev_object_count: 
                         print(person_in_frame, "ADDED plates")
+                        frame_queue.put(frame)
+                        get_offender()
                         # user_added_plates(person_in_frame, "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg")
                     print("Dish is in the sink.")
                 else:
                     # object count increased (cleaned)
                     if person_in_frame and current_object_count == 0 and prev_object_count > 0: 
                         print(person_in_frame, "CLEANED plates")
+                        frame_queue.put(frame)
+                        get_offender()
                         # user_cleaned_plates(person_in_frame)
                     print("No dish in the sink.")
 
@@ -442,14 +460,6 @@ def recognize_faces(frame_queue: Queue):
         elif len(face_names) == 0 and person_in_frame != None:
             person_in_frame = None
             print("Person left")
-
-        # print if a dish is added or removed from the frame
-
-        # Put the frame into the queue
-        global retrieve_frame
-        if retrieve_frame:
-            retrieve_frame = False
-            frame_queue.put(frame)
 
         # Display the results
         # for (top, right, bottom, left), name in zip(face_locations, face_names):
@@ -477,28 +487,6 @@ def recognize_faces(frame_queue: Queue):
     # Release handle to the webcam
     video_capture.release()
     # cv2.destroyAllWindows()
-
-
-def calibrate(frame_queue: Queue):
-    # set global retrieve_frame to true
-    global retrieve_frame
-    retrieve_frame = True
-
-    # get the frame from the queue
-    curr_frame = frame_queue.get(block=True, timeout=10)
-
-    print(curr_frame.shape)
-
-    # Perform calibration using the frame
-    # (Add your calibration logic here)
-
-    # Display the frame (for debugging purposes)
-    # cv2.imshow('Calibration', frame)
-
-    # Hit 'q' on the keyboard to quit!
-    # if cv2.waitKey(1) & 0xFF == ord('q'):
-    #     break
-
 
 
 if __name__ == '__main__':
