@@ -1,3 +1,4 @@
+from flask import jsonify
 import face_recognition
 import cv2
 import numpy as np
@@ -8,7 +9,9 @@ from queue import Queue
 person_in_frame = None
 dish_in_sink = False
 
-def recognize_faces():
+retrieve_frame = False
+
+def recognize_faces(frame_queue: Queue):
     # Get a reference to webcam #0 (the default one)
     video_capture = cv2.VideoCapture(0)
 
@@ -39,6 +42,9 @@ def recognize_faces():
     while True:
         # Grab a single frame of video
         ret, frame = video_capture.read()
+        if not ret:
+            print("Error: Could not read frame.")
+            break
 
         # Only process every other frame of video to save time
         if process_this_frame:
@@ -94,6 +100,12 @@ def recognize_faces():
             dish_in_sink = False
             print("Person walking by")
 
+        # Put the frame into the queue
+        global retrieve_frame
+        if retrieve_frame: 
+            retrieve_frame = False
+            frame_queue.put(frame)
+
         # Display the results
         # for (top, right, bottom, left), name in zip(face_locations, face_names):
         #     # Scale back up face locations since the frame we detected in was scaled to 1/4 size
@@ -120,3 +132,25 @@ def recognize_faces():
     # Release handle to the webcam
     video_capture.release()
     # cv2.destroyAllWindows()
+
+
+def calibrate(frame_queue: Queue):
+    # set global retrieve_frame to true
+    global retrieve_frame
+    retrieve_frame = True
+
+    # get the frame from the queue
+    curr_frame = frame_queue.get(block=True, timeout=10)
+
+    print(curr_frame.shape)
+
+
+    # Perform calibration using the frame
+    # (Add your calibration logic here)
+
+    # Display the frame (for debugging purposes)
+    # cv2.imshow('Calibration', frame) 
+
+    # Hit 'q' on the keyboard to quit!
+    # if cv2.waitKey(1) & 0xFF == ord('q'):
+    #     break
