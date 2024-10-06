@@ -9,6 +9,10 @@ import random
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO
 from flask_cors import CORS
+from ultralytics import YOLO
+from io import BytesIO
+from PIL import Image
+import base64
 import time
 
 
@@ -113,6 +117,17 @@ def maybe_initialize_user(user: str):
             'logs': [],
         }
 
+@app.route('/offender', methods=['GET'])
+def get_offender():
+    # Process the image (e.g., resize, convert to base64)
+    img = frame_queue.get(True, 10)
+    img_bytes = BytesIO()
+    image_data = img_bytes.getvalue().decode('base64')
+
+    # Emit the image data to the frontend
+    socketio.emit('image', {'image_data': image_data})
+
+    return jsonify({'message': 'Image uploaded successfully'})
 
 '''
     Gets the user plates
@@ -142,7 +157,7 @@ def user_added_plates(user: str, image: str, cleaned: bool):
     send_activity_to_client(activity[::-1])
 
     # Send dashboard - log
-    print("Sending log [user_added_plates] to frontend")
+    print("Sending log [user_added_plates] to frontend") # TODO: the program dies after this line
     maybe_initialize_user(user)
     random_integer = random.randint(1, 10000)
 
@@ -171,7 +186,6 @@ dish_in_sink = False
 
 retrieve_frame = False
 
-
 def recognize_faces(frame_queue: Queue):
     # Get a reference to webcam #0 (the default one)
     video_capture = cv2.VideoCapture(0)
@@ -198,7 +212,27 @@ def recognize_faces(frame_queue: Queue):
     face_locations = []
     face_encodings = []
     face_names = []
+    person_in_frame = None
+
     process_this_frame = True
+
+    dish_in_sink = False
+    prev_dish_in_sink = False
+    prev_object_count = 0
+    buffer_size = 5
+    object_buffer = {
+        "bowl": [],
+        "cup": [],
+        "fork": [],
+        "knife": [],
+        "spoon": [],
+        "bottle": [],
+        "wine glass": [],
+        "scissors": []
+    }
+
+    # Load a pretrained YOLO11n model
+    model = YOLO("yolo11n.pt")
 
     while True:
         # Grab a single frame of video
@@ -209,12 +243,38 @@ def recognize_faces(frame_queue: Queue):
 
         # Only process every other frame of video to save time
         if process_this_frame:
+            '''
+            ================================================================
+            ||                                                            ||
+            ||                      Frame processing                      ||
+            ||                                                            ||           
+            ================================================================
+            '''
             # Resize frame of video to 1/4 size for faster face recognition processing
             small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
 
+            # split frame into two halves (top and bottom)
+            height, width, channels = small_frame.shape
+            midpoint = height // 2
+
+            # Split the image vertically
+            # top_half = small_frame[:midpoint, :]
+            small_frame_bottom = small_frame[midpoint:, :]
+
+            # print(f"Top half shape: {top_half.shape}")
+            # print(f"Bottom half shape: {small_frame_bottom.shape}")
+
             # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
             rgb_small_frame = np.ascontiguousarray(small_frame[:, :, ::-1])
+            rgb_small_frame_bottom = np.ascontiguousarray(small_frame_bottom[:, :, ::-1])
 
+            '''
+            ================================================================
+            ||                                                            ||
+            ||                     Facial Recognition                     ||
+            ||                                                            ||           
+            ================================================================
+            '''
             # Find all the faces and face encodings in the current frame of video
             face_locations = face_recognition.face_locations(rgb_small_frame)
             face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
@@ -238,10 +298,113 @@ def recognize_faces(frame_queue: Queue):
 
                 face_names.append(name)
 
+            '''
+            ================================================================
+            ||                                                            ||
+            ||                      Dish Recognition                      ||
+            ||                                                            ||           
+            ================================================================
+            '''
+            # Run inference on the source
+            classes = [
+                # 0,  # person
+                39, # bottle
+                40, # wine glass
+                41, # cup
+                42, # fork
+                43, # knife
+                44, # spoon
+                45, # bowl
+                # 71, # sink
+                76, # scissors
+            ]
+
+            results = model.predict(rgb_small_frame_bottom, verbose=False, classes=classes)
+
+            # Initialize a dictionary to count occurrences of each class
+            object_counts = {}
+
+            # Iterate over the results generator
+            for result in results:
+                
+                # Get the class names
+                names = result.names  
+                
+                # Iterate through detected boxes
+                for detection in result.boxes:
+                    label = names[int(detection.cls)]  # Get the label using the class index
+                    
+                    # Count occurrences of each label
+                    if label in object_counts:
+                        object_counts[label] += 1
+                    else:
+                        object_counts[label] = 1
+            
+            # -- object buffer logic here --
+            any_object_detected = False
+            all_objects_below_threshold = True
+
+            # update object detection buffer
+            for obj in object_buffer.keys():
+                if obj in object_counts:
+                    object_buffer[obj].append(object_counts[obj])
+                else:
+                    object_buffer[obj].append(0)  # No object detected
+
+                # Maintain buffer size
+                if len(object_buffer[obj]) > buffer_size:
+                    object_buffer[obj].pop(0)
+
+                # Calculate the average for the current object
+                if len(object_buffer[obj]) > 0:  # Ensure there are values to average
+                    average_count = np.average(object_buffer[obj])
+                    
+                    # Check if object was seen more than half the times
+                    if average_count > 0.5:
+                        any_object_detected = True
+                    else: 
+                        all_objects_below_threshold = all_objects_below_threshold and True
+                else: 
+                    all_objects_below_threshold = False
+
+            # Set dish_in_sink based on the flags
+            prev_dish_in_sink = dish_in_sink
+            if any_object_detected:
+                dish_in_sink = True
+            elif all_objects_below_threshold:
+                dish_in_sink = False
+
+            # # Print the counts of each object
+            # for label, count in object_counts.items():
+            #     print(f"{label}: {count}")
+
+            # Additional logic to handle dish_in_sink state
+            if dish_in_sink != prev_dish_in_sink:
+                current_object_count = sum(object_counts.values())
+            
+                if dish_in_sink:
+                    # object count increased (added object)
+                    if person_in_frame and current_object_count > prev_object_count: 
+                        print(person_in_frame, "ADDED plates")
+                        frame_queue.put(frame)
+                        get_offender()
+                        # user_added_plates(person_in_frame, "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg")
+                    print("Dish is in the sink.")
+                else:
+                    # object count increased (cleaned)
+                    if person_in_frame and current_object_count == 0 and prev_object_count > 0: 
+                        print(person_in_frame, "CLEANED plates")
+                        frame_queue.put(frame)
+                        get_offender()
+                        # user_cleaned_plates(person_in_frame)
+                    print("No dish in the sink.")
+
+                prev_object_count = current_object_count
+
+
         process_this_frame = not process_this_frame
 
         # print name if person appears in the frame for the first time or leaves the frame
-        global person_in_frame
         if len(face_names) > 0 and person_in_frame != face_names[0]:
             person_in_frame = face_names[0]
             print("SENDING NOTIFICATION", person_in_frame)
@@ -252,24 +415,6 @@ def recognize_faces(frame_queue: Queue):
         elif len(face_names) == 0 and person_in_frame != None:
             person_in_frame = None
             print("Person left")
-
-        # print if a dish is added or removed from the frame
-        person_holding_dish = False
-        global dish_in_sink
-        if person_holding_dish and not dish_in_sink:
-            dish_in_sink = True
-            print("Dish added for the first time")
-        elif person_holding_dish and dish_in_sink:
-            print("More dish added to sink")
-        elif not person_holding_dish and dish_in_sink:
-            dish_in_sink = False
-            print("Person walking by")
-
-        # Put the frame into the queue
-        global retrieve_frame
-        if retrieve_frame:
-            retrieve_frame = False
-            frame_queue.put(frame)
 
         # Display the results
         # for (top, right, bottom, left), name in zip(face_locations, face_names):
