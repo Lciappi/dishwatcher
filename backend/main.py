@@ -11,11 +11,9 @@ from flask_socketio import SocketIO
 from flask_cors import CORS
 from ultralytics import YOLO
 from io import BytesIO
+import time
 from PIL import Image
 import base64
-import time
-
-from ultralytics import YOLO
 
 '''
     ================================================================================
