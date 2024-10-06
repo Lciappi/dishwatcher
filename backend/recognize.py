@@ -1,8 +1,9 @@
-from flask import jsonify
 import face_recognition
 import cv2
 import numpy as np
 from queue import Queue
+from datetime import datetime
+import random
 
 # reference: https://github.com/ageitgey/face_recognition
 
@@ -149,8 +150,97 @@ def calibrate(frame_queue: Queue):
     # (Add your calibration logic here)
 
     # Display the frame (for debugging purposes)
-    # cv2.imshow('Calibration', frame) 
+    # cv2.imshow('Calibration', frame)
 
     # Hit 'q' on the keyboard to quit!
     # if cv2.waitKey(1) & 0xFF == ord('q'):
     #     break
+
+'''
+    ================================================================================
+    Events
+    ================================================================================
+    
+    These functions are used when the AI detects an event that needs to be reported 
+    to the frontend.
+    
+    user_added_plates():
+        This means a user added a plate
+        We need to update the activity panel
+        We need to update the per-user log panel
+        
+    user_cleaned_plates():
+        update activity panel
+        update logs
+'''
+
+
+activity = []
+log = []
+
+def maybe_initialize_user(user: str):
+    for user in activity:
+        if user.get('name') == user:
+            return
+        else:
+            new_user = {
+                id: len(activity),
+                name: user,
+                logs: [],
+            }
+            activity.append(new_user)
+
+
+'''
+    Gets the user plates
+    
+    #TODO: YJ how the fuck are we going to sent an image of the culprit?
+            is it too much of a nice to have?
+'''
+def user_added_plates(user: str, image: str):
+    # Send notification
+    print("Sending notification [user_added_plates] to frontend")
+    curr_time = datetime.now().strftime('%I:%M %p')
+
+    # send_notifications_to_client(user, " added plates to the sink")
+
+    # Send dashboard - activity
+    print("Sending activity [user_added_plates] to frontend")
+
+    new_item = {
+        user: 'Leo Ciappi',
+        action: 'contaminated',
+        time: curr_time,
+        color: 'warning',
+        variant: 'outlined',
+    }
+
+    activity.append(new_item)
+    # send_activity_to_client(activity)
+
+    # Send dashboard - log
+    print("Sending log [user_added_plates] to frontend")
+    maybe_initialize_user(user)
+    random_integer = random.randint(1, 10000)
+
+    #TODO: Add image to log object
+
+    new_log = {
+        id: random_integer,
+        image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+        time: curr_time,
+        event: "Contaminated",
+    }
+
+    for user in activity:
+        if user.get('name') == user:
+            user['logs'].insert(0, new_log)
+
+    # send_activity_to_client(activity)
+
+def user_cleaned_plates(user: str):
+    # Send dashboard - log
+    # Send dashboard - activity
+    # Send notification
+    print("Sending user_cleaned_plates to frontend")
+

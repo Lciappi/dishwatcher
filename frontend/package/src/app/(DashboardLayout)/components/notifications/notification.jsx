@@ -8,12 +8,14 @@ const NotificationComponent = () => {
 
     useEffect(() => {
         // Listen for the 'notification' event and show a toast with the payload content
-        socket.on("notification", (payload) => {
-            console.log(payload); // logs the payload to console
+        socket.on("notifications", (payload) => {
+            console.log("notif", payload); // logs the payload to console
+            const notificationMessage = payload.user + " " + payload.action;
+
             // Display toast with the message from the server (payload)
-            toast.info(payload, {
+            toast.info(notificationMessage, {
                 position: "top-right",
-                autoClose: 5000, // Close after 5 seconds
+                autoClose: 10000, // Close after 5 seconds
                 hideProgressBar: false,
                 closeOnClick: true,
                 pauseOnHover: true,
@@ -24,7 +26,7 @@ const NotificationComponent = () => {
 
         // Clean up the socket listener when component unmounts
         return () => {
-            socket.off("notification");
+            socket.off("notifications");
         };
     }, []);
 
