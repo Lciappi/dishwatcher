@@ -38,32 +38,32 @@ def calibrate_sink():
 def send_activity_to_client():
     message = [
         {
-            user: 'Leo Ciappi',
-            action: 'cleaned',
-            time: '09:30 am',
-            color: 'primary',
-            variant: 'outlined',
+            'user': 'Leo Ciappi',
+            'action': 'cleaned',
+            'time': '09:30 am',
+            'color': 'primary',
+            'variant': 'outlined',
         },
         {
-            user: 'Yeojun Han',
-            action: 'contaiminated',
-            time: '09:40 am',
-            color: 'warning',
-            variant: 'outlined',
+            'user': 'Yeojun Han',
+            'action': 'contaiminated',
+            'time': '09:40 am',
+            'color': 'warning',
+            'variant': 'outlined',
         },
         {
-            user: 'Yeojun Han',
-            action: 'cleaned',
-            time: '09:43 am',
-            color: 'primary',
-            variant: 'outlined',
+            'user': 'Yeojun Han',
+            'action': 'cleaned',
+            'time': '09:43 am',
+            'color': 'primary',
+            'variant': 'outlined',
         },
         {
-            user: 'Leo Ciappi',
-            action: 'contaminated',
-            time: '09:50 am',
-            color: 'warning',
-            variant: 'outlined',
+            'user': 'Leo Ciappi',
+            'action': 'contaminated',
+            'time': '09:50 am',
+            'color': 'warning',
+            'variant': 'outlined',
         },
     ]
     socketio.emit('activity', message)
@@ -149,9 +149,9 @@ def maybe_initialize_user(user: str):
             return
         else:
             new_user = {
-                id: len(activity),
-                name: user,
-                logs: [],
+                'id': len(activity),
+                'name': user,
+                'logs': [],
             }
             activity.append(new_user)
 
@@ -173,28 +173,28 @@ def user_added_plates(user: str, image: str):
     print("Sending activity [user_added_plates] to frontend")
 
     new_item = {
-        user: 'Leo Ciappi',
-        action: 'contaminated',
-        time: curr_time,
-        color: 'warning',
-        variant: 'outlined',
+        'user': 'Leo Ciappi',
+        'action': 'contaminated',
+        'time': curr_time,
+        'color': 'warning',
+        'variant': 'outlined',
     }
 
     activity.append(new_item)
     # send_activity_to_client(activity)
 
     # Send dashboard - log
-    print("Sending log [user_added_plates] to frontend")
+    print("Sending log [user_added_plates] to frontend") # TODO: the program dies after this line
     maybe_initialize_user(user)
     random_integer = random.randint(1, 10000)
 
     # TODO: Add image to log object
 
     new_log = {
-        id: random_integer,
-        image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
-        time: curr_time,
-        event: "Contaminated",
+        'id': random_integer,
+        'image': "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+        'time': curr_time,
+        'event': "Contaminated",
     }
 
     for user in activity:
@@ -250,6 +250,7 @@ def recognize_faces(frame_queue: Queue):
 
     dish_in_sink = False
     prev_dish_in_sink = False
+    prev_object_count = 0
     buffer_size = 5
     object_buffer = {
         "bowl": [],
@@ -370,7 +371,8 @@ def recognize_faces(frame_queue: Queue):
                         object_counts[label] += 1
                     else:
                         object_counts[label] = 1
-
+            
+            # -- object buffer logic here --
             any_object_detected = False
             all_objects_below_threshold = True
 
@@ -398,19 +400,32 @@ def recognize_faces(frame_queue: Queue):
                     all_objects_below_threshold = False
 
             # Set dish_in_sink based on the flags
+            prev_dish_in_sink = dish_in_sink
             if any_object_detected:
                 dish_in_sink = True
             elif all_objects_below_threshold:
                 dish_in_sink = False
 
+            # # Print the counts of each object
+            # for label, count in object_counts.items():
+            #     print(f"{label}: {count}")
+
             # Additional logic to handle dish_in_sink state
             if dish_in_sink != prev_dish_in_sink:
+                # current_object_count = sum(object_counts.values())
+            
                 if dish_in_sink:
-                    prev_dish_in_sink = True
+                    # object count increased (added object)
+                    # if current_object_count > prev_object_count: 
+                        # user_added_plates(person_in_frame, "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg")
                     print("Dish is in the sink.")
                 else:
-                    prev_dish_in_sink = False
+                    # object count increased (cleaned)
+                    # if current_object_count == 0 and prev_object_count > 0: 
+                    #     user_cleaned_plates(person_in_frame)
                     print("No dish in the sink.")
+
+                # prev_object_count = current_object_count
 
 
         process_this_frame = not process_this_frame
