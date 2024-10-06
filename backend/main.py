@@ -116,18 +116,6 @@ def maybe_initialize_user(user: str):
             'logs': [],
         }
 
-@app.route('/offender', methods=['GET'])
-def get_offender():
-    # Process the image (e.g., resize, convert to base64)
-    img = frame_queue.get(True, 10)
-    img_bytes = BytesIO()
-    image_data = img_bytes.getvalue().decode('base64')
-
-    # Emit the image data to the frontend
-    socketio.emit('image', {'image_data': image_data})
-
-    return jsonify({'message': 'Image uploaded successfully'})
-
 '''
     Gets the user plates
 
@@ -139,7 +127,9 @@ def user_added_plates(user: str, image: str, cleaned: bool):
     print("Sending notification [user_added_plates] to frontend")
     curr_time = datetime.now().strftime('%I:%M:%S %p')
 
-    send_notifications_to_client(user, " added plates to the sink")
+    message = " cleaned the dishes!" if cleaned else "added plates to the sink"
+
+    send_notifications_to_client(user, message)
 
     # Send dashboard - activity
     print("Sending activity [user_added_plates] to frontend")
@@ -161,10 +151,18 @@ def user_added_plates(user: str, image: str, cleaned: bool):
     random_integer = random.randint(1, 10000)
 
     # TODO: Add image to log object
+    img = frame_queue.get(True, 10)
+    img = Image.fromarray(img)
+    img_bytes = BytesIO()
+    img.save(img_bytes, format='JPEG')
+    img_bytes.seek(0)
+    image_data = base64.b64encode(img_bytes.read()).decode('utf-8')
+
+    print("IMAGE DATA: ", image_data)
 
     new_log = {
         'id': random_integer,
-        'image': "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+        'image': image_data,
         'time': curr_time,
         'event': "Cleaned" if cleaned else "Contaminated",
     }
@@ -417,16 +415,14 @@ def recognize_faces(frame_queue: Queue):
                     if person_in_frame and current_object_count > prev_object_count: 
                         print(person_in_frame, "ADDED plates")
                         frame_queue.put(frame)
-                        get_offender()
-                        # user_added_plates(person_in_frame, "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg")
+                        user_added_plates(person_in_frame, "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg", False)
                     print("Dish is in the sink.")
                 else:
                     # object count increased (cleaned)
                     if person_in_frame and current_object_count == 0 and prev_object_count > 0: 
                         print(person_in_frame, "CLEANED plates")
                         frame_queue.put(frame)
-                        get_offender()
-                        # user_cleaned_plates(person_in_frame)
+                        user_added_plates(person_in_frame, "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg", True)
                     print("No dish in the sink.")
 
                 prev_object_count = current_object_count
@@ -473,28 +469,6 @@ def recognize_faces(frame_queue: Queue):
     video_capture.release()
     # cv2.destroyAllWindows()
 
-
-def calibrate(frame_queue: Queue):
-    # set global retrieve_frame to true
-    global retrieve_frame
-    retrieve_frame = True
-
-    # get the frame from the queue
-    curr_frame = frame_queue.get(block=True, timeout=10)
-
-    print(curr_frame.shape)
-
-    # Perform calibration using the frame
-    # (Add your calibration logic here)
-
-    # Display the frame (for debugging purposes)
-    # cv2.imshow('Calibration', frame)
-
-    # Hit 'q' on the keyboard to quit!
-    # if cv2.waitKey(1) & 0xFF == ord('q'):
-    #     break
-
-
 '''
     ================================================================================
     INTEGRATION TESTS
@@ -519,6 +493,6 @@ def test_contaminated_sink():
     print("Test ended")
 
 if __name__ == '__main__':
-    # threading.Thread(target=recognize_faces, args=(frame_queue,), daemon=True).start()
-    threading.Thread(target=test_contaminated_sink, daemon=True).start()
+    threading.Thread(target=recognize_faces, args=(frame_queue,), daemon=True).start()
+    # threading.Thread(target=test_contaminated_sink, daemon=True).start()
     socketio.run(app, debug=True, port=8080, host='0.0.0.0')
