@@ -28,8 +28,7 @@ def calibrate_sink():
     calibrate(frame_queue=frame_queue)
     return jsonify({"status": "Calibration complete"})
 
-# all activity ordered by time
-# for main feed "recent logs"
+# fetch the initial activity state
 @app.route("/activity", methods=['GET'])
 def send_activity_to_client():
     message = [
@@ -90,7 +89,7 @@ def send_log_to_client():
             ],
         },
         {
-            id: "2",
+            id: 2,
             name: "Yeojun Han",
             logs: [
                 {
@@ -106,15 +105,13 @@ def send_log_to_client():
     return jsonify({"log": message})
 
 # notifications for given user
-@app.route("/notifications/<username>", methods=['GET'])
-def send_notifications_to_client(username):
-    # Dummy data for demonstration
-    # notifications = {
-    #     "Leo Ciappi": ["Notification 1", "Notification 2"],
-    #     "Yeojun Han": ["Notification 3"]
-    # }
-    # user_notifications = notifications.get(username, [])
-    message = [] # dummy data
+@app.route("/notifications/", methods=['GET'])
+def send_notifications_to_client(username, action):
+    message = {
+        user: username,
+        action: action
+    }
+
     socketio.emit('notifications', message)
     return jsonify({"notifications": message})
 

@@ -13,7 +13,7 @@ const NotificationComponent = () => {
             // Display toast with the message from the server (payload)
             toast.info(payload, {
                 position: "top-right",
-                autoClose: 5000, // Close after 5 seconds
+                autoClose: 10000, // Close after 5 seconds
                 hideProgressBar: false,
                 closeOnClick: true,
                 pauseOnHover: true,
