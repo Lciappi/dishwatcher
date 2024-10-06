@@ -412,20 +412,22 @@ def recognize_faces(frame_queue: Queue):
 
             # Additional logic to handle dish_in_sink state
             if dish_in_sink != prev_dish_in_sink:
-                # current_object_count = sum(object_counts.values())
+                current_object_count = sum(object_counts.values())
             
                 if dish_in_sink:
                     # object count increased (added object)
-                    # if current_object_count > prev_object_count: 
+                    if person_in_frame and current_object_count > prev_object_count: 
+                        print(person_in_frame, "ADDED plates")
                         # user_added_plates(person_in_frame, "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg")
                     print("Dish is in the sink.")
                 else:
                     # object count increased (cleaned)
-                    # if current_object_count == 0 and prev_object_count > 0: 
-                    #     user_cleaned_plates(person_in_frame)
+                    if person_in_frame and current_object_count == 0 and prev_object_count > 0: 
+                        print(person_in_frame, "CLEANED plates")
+                        # user_cleaned_plates(person_in_frame)
                     print("No dish in the sink.")
 
-                # prev_object_count = current_object_count
+                prev_object_count = current_object_count
 
 
         process_this_frame = not process_this_frame
