@@ -216,12 +216,7 @@ def user_cleaned_plates(user: str):
     ================================================================================
 
 '''
-
-person_in_frame = None
-dish_in_sink = False
-
 retrieve_frame = False
-
 
 def recognize_faces(frame_queue: Queue):
     # Get a reference to webcam #0 (the default one)
@@ -249,8 +244,23 @@ def recognize_faces(frame_queue: Queue):
     face_locations = []
     face_encodings = []
     face_names = []
-    existing_object_counts = {}
+    person_in_frame = None
+
     process_this_frame = True
+
+    dish_in_sink = False
+    prev_dish_in_sink = False
+    buffer_size = 5
+    object_buffer = {
+        "bowl": [],
+        "cup": [],
+        "fork": [],
+        "knife": [],
+        "spoon": [],
+        "bottle": [],
+        "wine glass": [],
+        "scissors": []
+    }
 
     # Load a pretrained YOLO11n model
     model = YOLO("yolo11n.pt")
@@ -361,15 +371,51 @@ def recognize_faces(frame_queue: Queue):
                     else:
                         object_counts[label] = 1
 
-            # Print the counts of each object
-            for label, count in object_counts.items():
-                print(f"{label}: {count}")
+            any_object_detected = False
+            all_objects_below_threshold = True
+
+            # update object detection buffer
+            for obj in object_buffer.keys():
+                if obj in object_counts:
+                    object_buffer[obj].append(object_counts[obj])
+                else:
+                    object_buffer[obj].append(0)  # No object detected
+
+                # Maintain buffer size
+                if len(object_buffer[obj]) > buffer_size:
+                    object_buffer[obj].pop(0)
+
+                # Calculate the average for the current object
+                if len(object_buffer[obj]) > 0:  # Ensure there are values to average
+                    average_count = np.average(object_buffer[obj])
+                    
+                    # Check if object was seen more than half the times
+                    if average_count > 0.5:
+                        any_object_detected = True
+                    else: 
+                        all_objects_below_threshold = all_objects_below_threshold and True
+                else: 
+                    all_objects_below_threshold = False
+
+            # Set dish_in_sink based on the flags
+            if any_object_detected:
+                dish_in_sink = True
+            elif all_objects_below_threshold:
+                dish_in_sink = False
+
+            # Additional logic to handle dish_in_sink state
+            if dish_in_sink != prev_dish_in_sink:
+                if dish_in_sink:
+                    prev_dish_in_sink = True
+                    print("Dish is in the sink.")
+                else:
+                    prev_dish_in_sink = False
+                    print("No dish in the sink.")
 
 
         process_this_frame = not process_this_frame
 
         # print name if person appears in the frame for the first time or leaves the frame
-        global person_in_frame
         if len(face_names) > 0 and person_in_frame != face_names[0]:
             person_in_frame = face_names[0]
             print("SENDING NOTIFICATION", person_in_frame)
@@ -381,16 +427,6 @@ def recognize_faces(frame_queue: Queue):
             print("Person left")
 
         # print if a dish is added or removed from the frame
-        person_holding_dish = False
-        global dish_in_sink
-        if person_holding_dish and not dish_in_sink:
-            dish_in_sink = True
-            print("Dish added for the first time")
-        elif person_holding_dish and dish_in_sink:
-            print("More dish added to sink")
-        elif not person_holding_dish and dish_in_sink:
-            dish_in_sink = False
-            print("Person walking by")
 
         # Put the frame into the queue
         global retrieve_frame
