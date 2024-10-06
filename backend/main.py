@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO
 from flask_cors import CORS
+from queue import Queue
+import threading
 from recognize import recognize_faces
 
 app = Flask(__name__)
@@ -104,5 +106,5 @@ def send_notifications_to_client(username):
     return jsonify({"notifications": message})
 
 if __name__ == '__main__':
+    threading.Thread(target=recognize_faces, daemon=True).start()
     socketio.run(app, debug=True, port=8080, host='0.0.0.0')
-    recognize_faces()

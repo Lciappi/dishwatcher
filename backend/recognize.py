@@ -1,8 +1,12 @@
 import face_recognition
 import cv2
 import numpy as np
+from queue import Queue
 
 # reference: https://github.com/ageitgey/face_recognition
+
+person_in_frame = None
+dish_in_sink = False
 
 def recognize_faces():
     # Get a reference to webcam #0 (the default one)
@@ -69,30 +73,50 @@ def recognize_faces():
 
         process_this_frame = not process_this_frame
 
+        # print name if person appears in the frame for the first time or leaves the frame
+        global person_in_frame
+        if len(face_names) > 0 and person_in_frame != face_names[0]:
+            person_in_frame = face_names[0]
+            print(person_in_frame)
+        elif len(face_names) == 0 and person_in_frame != None:
+            person_in_frame = None
+            print("Person left")
+        
+        # print if a dish is added or removed from the frame
+        person_holding_dish = False
+        global dish_in_sink
+        if person_holding_dish and not dish_in_sink:
+            dish_in_sink = True
+            print("Dish added for the first time")
+        elif person_holding_dish and dish_in_sink: 
+            print("More dish added to sink")
+        elif not person_holding_dish and dish_in_sink:
+            dish_in_sink = False
+            print("Person walking by")
 
         # Display the results
-        for (top, right, bottom, left), name in zip(face_locations, face_names):
-            # Scale back up face locations since the frame we detected in was scaled to 1/4 size
-            top *= 4
-            right *= 4
-            bottom *= 4
-            left *= 4
+        # for (top, right, bottom, left), name in zip(face_locations, face_names):
+        #     # Scale back up face locations since the frame we detected in was scaled to 1/4 size
+        #     top *= 4
+        #     right *= 4
+        #     bottom *= 4
+        #     left *= 4
 
-            # Draw a box around the face
-            cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+        #     # Draw a box around the face
+        #     cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
 
-            # Draw a label with a name below the face
-            cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
-            font = cv2.FONT_HERSHEY_DUPLEX
-            cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+        #     # Draw a label with a name below the face
+        #     cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
+        #     font = cv2.FONT_HERSHEY_DUPLEX
+        #     cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
 
-        # Display the resulting image
-        cv2.imshow('Video', frame)
+        # # Display the resulting image
+        # cv2.imshow('Video', frame)
 
-        # Hit 'q' on the keyboard to quit!
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        # # Hit 'q' on the keyboard to quit!
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     break
 
     # Release handle to the webcam
     video_capture.release()
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
