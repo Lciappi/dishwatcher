@@ -214,9 +214,6 @@ def recognize_faces(frame_queue: Queue):
 
     process_this_frame = True
 
-    # Load a pretrained YOLO11n model
-    model = YOLO("yolo11n.pt")
-
     dish_in_sink = False
     prev_dish_in_sink = False
     prev_object_count = 0
@@ -251,13 +248,6 @@ def recognize_faces(frame_queue: Queue):
             ||                                                            ||           
             ================================================================
             '''
-            '''
-            ================================================================
-            ||                                                            ||
-            ||                      Frame processing                      ||
-            ||                                                            ||           
-            ================================================================
-            '''
             # Resize frame of video to 1/4 size for faster face recognition processing
             small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
 
@@ -272,28 +262,8 @@ def recognize_faces(frame_queue: Queue):
             # print(f"Top half shape: {top_half.shape}")
             # print(f"Bottom half shape: {small_frame_bottom.shape}")
 
-            # split frame into two halves (top and bottom)
-            height, width, channels = small_frame.shape
-            midpoint = height // 2
-
-            # Split the image vertically
-            # top_half = small_frame[:midpoint, :]
-            small_frame_bottom = small_frame[midpoint:, :]
-
-            # print(f"Top half shape: {top_half.shape}")
-            # print(f"Bottom half shape: {small_frame_bottom.shape}")
-
             # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
             rgb_small_frame = np.ascontiguousarray(small_frame[:, :, ::-1])
-            rgb_small_frame_bottom = np.ascontiguousarray(small_frame_bottom[:, :, ::-1])
-
-            '''
-            ================================================================
-            ||                                                            ||
-            ||                     Facial Recognition                     ||
-            ||                                                            ||           
-            ================================================================
-            '''
             rgb_small_frame_bottom = np.ascontiguousarray(small_frame_bottom[:, :, ::-1])
 
             '''
