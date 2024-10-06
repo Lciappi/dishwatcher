@@ -11,23 +11,18 @@ const CalibrateSink = () => {
 
     // Function to handle the button click
     const handleButtonClick = async () => {
+        setFeedback(''); // Reset feedback
         try {
-            const response = await fetch('http://localhost:8080/', {
+            const response = await fetch('http://localhost:8080/calibrate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ roommates }), // Send roommates data if needed
+                body: JSON.stringify({}), // Adjust this if you need to send specific data
             });
 
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-
-            const data = await response.json();
-            console.log('Response from backend:', data);
             // Set success feedback
-            setFeedback('Sink calibrated successfully!');
+            setFeedback('Sink calibrated successfully! ' + response.status + ' | ' + response.statusText );
 
         } catch (error) {
             console.error('Error hitting the sink endpoint:', error);
