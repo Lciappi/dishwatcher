@@ -9,6 +9,7 @@ import random
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO
 from flask_cors import CORS
+from ultralytics import YOLO
 
 '''
     ================================================================================
@@ -248,7 +249,11 @@ def recognize_faces(frame_queue: Queue):
     face_locations = []
     face_encodings = []
     face_names = []
+    existing_object_counts = {}
     process_this_frame = True
+
+    # Load a pretrained YOLO11n model
+    model = YOLO("yolo11n.pt")
 
     while True:
         # Grab a single frame of video
@@ -259,12 +264,38 @@ def recognize_faces(frame_queue: Queue):
 
         # Only process every other frame of video to save time
         if process_this_frame:
+            '''
+            ================================================================
+            ||                                                            ||
+            ||                      Frame processing                      ||
+            ||                                                            ||           
+            ================================================================
+            '''
             # Resize frame of video to 1/4 size for faster face recognition processing
             small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
 
+            # split frame into two halves (top and bottom)
+            height, width, channels = small_frame.shape
+            midpoint = height // 2
+
+            # Split the image vertically
+            # top_half = small_frame[:midpoint, :]
+            small_frame_bottom = small_frame[midpoint:, :]
+
+            # print(f"Top half shape: {top_half.shape}")
+            # print(f"Bottom half shape: {small_frame_bottom.shape}")
+
             # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
             rgb_small_frame = np.ascontiguousarray(small_frame[:, :, ::-1])
+            rgb_small_frame_bottom = np.ascontiguousarray(small_frame_bottom[:, :, ::-1])
 
+            '''
+            ================================================================
+            ||                                                            ||
+            ||                     Facial Recognition                     ||
+            ||                                                            ||           
+            ================================================================
+            '''
             # Find all the faces and face encodings in the current frame of video
             face_locations = face_recognition.face_locations(rgb_small_frame)
             face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
@@ -287,6 +318,53 @@ def recognize_faces(frame_queue: Queue):
                     name = known_face_names[best_match_index]
 
                 face_names.append(name)
+
+            '''
+            ================================================================
+            ||                                                            ||
+            ||                      Dish Recognition                      ||
+            ||                                                            ||           
+            ================================================================
+            '''
+            # Run inference on the source
+            classes = [
+                # 0,  # person
+                39, # bottle
+                40, # wine glass
+                41, # cup
+                42, # fork
+                43, # knife
+                44, # spoon
+                45, # bowl
+                # 71, # sink
+                76, # scissors
+            ]
+
+            results = model.predict(rgb_small_frame_bottom, verbose=False, classes=classes)
+
+            # Initialize a dictionary to count occurrences of each class
+            object_counts = {}
+
+            # Iterate over the results generator
+            for result in results:
+                
+                # Get the class names
+                names = result.names  
+                
+                # Iterate through detected boxes
+                for detection in result.boxes:
+                    label = names[int(detection.cls)]  # Get the label using the class index
+                    
+                    # Count occurrences of each label
+                    if label in object_counts:
+                        object_counts[label] += 1
+                    else:
+                        object_counts[label] = 1
+
+            # Print the counts of each object
+            for label, count in object_counts.items():
+                print(f"{label}: {count}")
+
 
         process_this_frame = not process_this_frame
 

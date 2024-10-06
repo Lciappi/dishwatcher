@@ -67,6 +67,7 @@ torch
 torchvision
 typing_extensions
 urllib3
+ultralytics
 uWSGI
 virtualenv
 Werkzeug
