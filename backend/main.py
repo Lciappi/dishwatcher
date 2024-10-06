@@ -13,6 +13,8 @@ from ultralytics import YOLO
 from io import BytesIO
 from PIL import Image
 import base64
+import time
+
 
 '''
     ================================================================================
@@ -38,79 +40,22 @@ def calibrate_sink():
 
 # fetch the initial activity state
 @app.route("/activity", methods=['GET'])
-def send_activity_to_client():
-    message = [
-        {
-            'user': 'Leo Ciappi',
-            'action': 'cleaned',
-            'time': '09:30 am',
-            'color': 'primary',
-            'variant': 'outlined',
-        },
-        {
-            'user': 'Yeojun Han',
-            'action': 'contaiminated',
-            'time': '09:40 am',
-            'color': 'warning',
-            'variant': 'outlined',
-        },
-        {
-            'user': 'Yeojun Han',
-            'action': 'cleaned',
-            'time': '09:43 am',
-            'color': 'primary',
-            'variant': 'outlined',
-        },
-        {
-            'user': 'Leo Ciappi',
-            'action': 'contaminated',
-            'time': '09:50 am',
-            'color': 'warning',
-            'variant': 'outlined',
-        },
-    ]
-    socketio.emit('activity', message)
-    return jsonify({"activity": message})
+def send_activity_to_client(activity):
+    print("Sending activity to frontend")
+    print("activity:", activity)
+    print("=====================================")
+    socketio.emit('activity', activity)
+    return jsonify({"activity": activity})
 
 # logs ordered by who is doing what, independent by time
 # for the dashboard and leaderboard
 # per user grouping
 @app.route("/log", methods=['GET'])
-def send_log_to_client():
-    message = [ # dummy data
-        {
-            id: 1,
-            name: "Leo Ciappi",
-            logs: [
-                {
-                    id: "event",
-                    image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
-                    time: "1:32 PM",
-                    event: "Cleaned"
-                },
-                {
-                    id: "event",
-                    image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
-                    time: "2:00 AM",
-                    event: "Contaminated"
-                },
-            ],
-        },
-        {
-            id: 2,
-            name: "Yeojun Han",
-            logs: [
-                {
-                    id: "event",
-                    image: "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
-                    time: "1:54 AM",
-                    event: "Contaminated"
-                },
-            ],
-        }
-    ]
-    socketio.emit('log', message)
-    return jsonify({"log": message})
+def send_log_to_client(log):
+    print("Sending log to frontend")
+    print("log_flask: ", log)
+    socketio.emit('log', log)
+    return jsonify({"log": log})
 
 # notifications for given user
 @app.route("/notifications/", methods=['GET'])
@@ -132,7 +77,7 @@ def send_notifications_to_client(username, action):
     These functions are used when the AI detects an event that needs to be reported 
     to the frontend.
 
-    user_added_plates():
+    user added plates():
         This means a user added a plate
         We need to update the activity panel
         We need to update the per-user log panel
@@ -143,20 +88,34 @@ def send_notifications_to_client(username, action):
 '''
 
 activity = []
-log = []
 
+'''
+    LOG DICTIONARY
+    log[user] = {
+        'id': int,
+        'name': str,
+        'logs':
+            [
+                {
+                    'id': random_integer,
+                    'image': "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
+                    'time': curr_time,
+                    'event': "Contaminated",
+                }
+            ]
+
+    }
+'''
+log = {}
 
 def maybe_initialize_user(user: str):
-    for user in activity:
-        if user.get('name') == user:
-            return
-        else:
-            new_user = {
-                'id': len(activity),
-                'name': user,
-                'logs': [],
-            }
-            activity.append(new_user)
+    print("maybe_initialize_user")
+    if user not in log:
+        log[user] = {
+            'id': len(activity),
+            'name': user,
+            'logs': [],
+        }
 
 @app.route('/offender', methods=['GET'])
 def get_offender():
@@ -176,26 +135,26 @@ def get_offender():
     #TODO: YJ how the fuck are we going to sent an image of the culprit?
             is it too much of a nice to have?
 '''
-def user_added_plates(user: str, image: str):
+def user_added_plates(user: str, image: str, cleaned: bool):
     # Send notification
     print("Sending notification [user_added_plates] to frontend")
-    curr_time = datetime.now().strftime('%I:%M %p')
+    curr_time = datetime.now().strftime('%I:%M:%S %p')
 
-    # send_notifications_to_client(user, " added plates to the sink")
+    send_notifications_to_client(user, " added plates to the sink")
 
     # Send dashboard - activity
     print("Sending activity [user_added_plates] to frontend")
 
     new_item = {
-        'user': 'Leo Ciappi',
-        'action': 'contaminated',
+        'user': user,
+        'action': 'cleaned' if cleaned else 'contaminated',
         'time': curr_time,
         'color': 'warning',
         'variant': 'outlined',
     }
 
     activity.append(new_item)
-    # send_activity_to_client(activity)
+    send_activity_to_client(activity[::-1])
 
     # Send dashboard - log
     print("Sending log [user_added_plates] to frontend") # TODO: the program dies after this line
@@ -208,28 +167,23 @@ def user_added_plates(user: str, image: str):
         'id': random_integer,
         'image': "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
         'time': curr_time,
-        'event': "Contaminated",
+        'event': "Cleaned" if cleaned else "Contaminated",
     }
 
-    for user in activity:
-        if user.get('name') == user:
-            user['logs'].insert(0, new_log)
+    log[user]['logs'].append(new_log)
 
-    # send_activity_to_client(activity)
+    print("\n\n ============= logic base log: \n", log.values())
+    print("converting")
+    list_log = []
+    for key in log.keys():
+        list_log.append(log[key])
 
+    # must reverse activity to show the latest event first
+    send_log_to_client(list_log[::-1])
 
-def user_cleaned_plates(user: str):
-    # Send dashboard - log
-    # Send dashboard - activity
-    # Send notification
-    print("Sending user_cleaned_plates to frontend")
+person_in_frame = None
+dish_in_sink = False
 
-'''
-    ================================================================================
-    AI Section
-    ================================================================================
-
-'''
 retrieve_frame = False
 
 def recognize_faces(frame_queue: Queue):
@@ -455,7 +409,8 @@ def recognize_faces(frame_queue: Queue):
             person_in_frame = face_names[0]
             print("SENDING NOTIFICATION", person_in_frame)
             app.app_context().push()
-            send_notifications_to_client(person_in_frame, "entered the frame")
+            if person_in_frame != "Unknown":
+                send_notifications_to_client(person_in_frame, "entered the frame")
             print(person_in_frame)
         elif len(face_names) == 0 and person_in_frame != None:
             person_in_frame = None
@@ -489,6 +444,51 @@ def recognize_faces(frame_queue: Queue):
     # cv2.destroyAllWindows()
 
 
+def calibrate(frame_queue: Queue):
+    # set global retrieve_frame to true
+    global retrieve_frame
+    retrieve_frame = True
+
+    # get the frame from the queue
+    curr_frame = frame_queue.get(block=True, timeout=10)
+
+    print(curr_frame.shape)
+
+    # Perform calibration using the frame
+    # (Add your calibration logic here)
+
+    # Display the frame (for debugging purposes)
+    # cv2.imshow('Calibration', frame)
+
+    # Hit 'q' on the keyboard to quit!
+    # if cv2.waitKey(1) & 0xFF == ord('q'):
+    #     break
+
+
+'''
+    ================================================================================
+    INTEGRATION TESTS
+    ================================================================================
+'''
+
+def test_contaminated_sink():
+    app.app_context().push()
+    print("Started test thread")
+    time.sleep(5)
+    print("10 second countdown")
+    time.sleep(5)
+    print("5 second countdown")
+    time.sleep(5)
+    print("Testing contaminated sink")
+    user_added_plates("Leo Ciappi", "https://cdn.pixabay.com/photo/2016/03/31/19/30/dish-1295066_640.png", True)
+    time.sleep(5)
+    user_added_plates("Yeojun Han", "https://cdn.pixabay.com/photo/2016/03/31/19/30/dish-1295066_640.png", False)
+    time.sleep(5)
+    user_added_plates("Leo Ciappi", "https://cdn.pixabay.com/photo/2016/03/31/19/30/dish-1295066_640.png", False)
+    time.sleep(5)
+    print("Test ended")
+
 if __name__ == '__main__':
-    threading.Thread(target=recognize_faces, args=(frame_queue,), daemon=True).start()
+    # threading.Thread(target=recognize_faces, args=(frame_queue,), daemon=True).start()
+    threading.Thread(target=test_contaminated_sink, daemon=True).start()
     socketio.run(app, debug=True, port=8080, host='0.0.0.0')
