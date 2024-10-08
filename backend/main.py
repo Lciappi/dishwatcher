@@ -151,18 +151,10 @@ def user_added_plates(user: str, image: str, cleaned: bool):
     random_integer = random.randint(1, 10000)
 
     # TODO: Add image to log object
-    img = frame_queue.get(True, 10)
-    img = Image.fromarray(img)
-    img_bytes = BytesIO()
-    img.save(img_bytes, format='JPEG')
-    img_bytes.seek(0)
-    image_data = base64.b64encode(img_bytes.read()).decode('utf-8')
-
-    print("IMAGE DATA: ", image_data)
 
     new_log = {
         'id': random_integer,
-        'image': image_data,
+        'image': "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg",
         'time': curr_time,
         'event': "Cleaned" if cleaned else "Contaminated",
     }
@@ -182,6 +174,10 @@ person_in_frame = None
 dish_in_sink = False
 
 retrieve_frame = False
+
+# Add a new variable to track the last action of the person
+global last_action
+last_action = None
 
 def recognize_faces(frame_queue: Queue):
     # Get a reference to webcam #0 (the default one)
@@ -213,9 +209,6 @@ def recognize_faces(frame_queue: Queue):
     person_in_frame = None
 
     process_this_frame = True
-
-    # Load a pretrained YOLO11n model
-    model = YOLO("yolo11n.pt")
 
     dish_in_sink = False
     prev_dish_in_sink = False
@@ -251,13 +244,6 @@ def recognize_faces(frame_queue: Queue):
             ||                                                            ||           
             ================================================================
             '''
-            '''
-            ================================================================
-            ||                                                            ||
-            ||                      Frame processing                      ||
-            ||                                                            ||           
-            ================================================================
-            '''
             # Resize frame of video to 1/4 size for faster face recognition processing
             small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
 
@@ -272,28 +258,8 @@ def recognize_faces(frame_queue: Queue):
             # print(f"Top half shape: {top_half.shape}")
             # print(f"Bottom half shape: {small_frame_bottom.shape}")
 
-            # split frame into two halves (top and bottom)
-            height, width, channels = small_frame.shape
-            midpoint = height // 2
-
-            # Split the image vertically
-            # top_half = small_frame[:midpoint, :]
-            small_frame_bottom = small_frame[midpoint:, :]
-
-            # print(f"Top half shape: {top_half.shape}")
-            # print(f"Bottom half shape: {small_frame_bottom.shape}")
-
             # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
             rgb_small_frame = np.ascontiguousarray(small_frame[:, :, ::-1])
-            rgb_small_frame_bottom = np.ascontiguousarray(small_frame_bottom[:, :, ::-1])
-
-            '''
-            ================================================================
-            ||                                                            ||
-            ||                     Facial Recognition                     ||
-            ||                                                            ||           
-            ================================================================
-            '''
             rgb_small_frame_bottom = np.ascontiguousarray(small_frame_bottom[:, :, ::-1])
 
             '''
@@ -410,19 +376,24 @@ def recognize_faces(frame_queue: Queue):
             if dish_in_sink != prev_dish_in_sink:
                 current_object_count = sum(object_counts.values())
             
+                global last_action
                 if dish_in_sink:
                     # object count increased (added object)
                     if person_in_frame and current_object_count > prev_object_count: 
-                        print(person_in_frame, "ADDED plates")
-                        frame_queue.put(frame)
-                        user_added_plates(person_in_frame, "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg", False)
+                        if last_action != "contaminated":  # Check if the last action was not contamination
+                            print(person_in_frame, "ADDED plates")
+                            frame_queue.put(frame)
+                            user_added_plates(person_in_frame, "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg", False)
+                            last_action = "contaminated"  # Update last action
                     print("Dish is in the sink.")
                 else:
                     # object count increased (cleaned)
                     if person_in_frame and current_object_count == 0 and prev_object_count > 0: 
-                        print(person_in_frame, "CLEANED plates")
-                        frame_queue.put(frame)
-                        user_added_plates(person_in_frame, "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg", True)
+                        if last_action != "cleaned":  # Check if the last action was not cleaning
+                            print(person_in_frame, "CLEANED plates")
+                            frame_queue.put(frame)
+                            user_added_plates(person_in_frame, "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg", True)
+                            last_action = "cleaned"  # Update last action
                     print("No dish in the sink.")
 
                 prev_object_count = current_object_count
@@ -436,7 +407,7 @@ def recognize_faces(frame_queue: Queue):
             print("SENDING NOTIFICATION", person_in_frame)
             app.app_context().push()
             if person_in_frame != "Unknown":
-                send_notifications_to_client(person_in_frame, "entered the frame")
+                send_notifications_to_client(person_in_frame, "is a suspect")
             print(person_in_frame)
         elif len(face_names) == 0 and person_in_frame != None:
             person_in_frame = None
