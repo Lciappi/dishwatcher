@@ -12,6 +12,7 @@ class LogicLayer(threading.Thread):
         super().__init__()
         self.event_bus = event_bus
         self.whatever = 0
+        self.image = "https://as2.ftcdn.net/v2/jpg/01/75/93/51/1000_F_175935137_aPD2ZOgBiey7Tlqz5PTXPqtmJnX9ZYU0.jpg"
         self.frame_queue = Queue()
         self.person_in_frame = None
         self.dish_in_sink = False
@@ -107,18 +108,27 @@ class LogicLayer(threading.Thread):
                 self.dish_in_sink = False
 
             current_object_count = sum(object_counts.values())
+
             if self.dish_in_sink != self.prev_dish_in_sink:
                 if self.dish_in_sink:
                     if self.person_in_frame and current_object_count > self.prev_object_count:
                         if self.last_action != "contaminated":
                             self.frame_queue.put(frame)
-                            self.event_bus.publish({"type": "contaminated", "user": self.person_in_frame, "message": "added plates"})
+                            self.event_bus.publish({
+                                "user": self.person_in_frame,
+                                "image": self.image,
+                                "cleaned_b": False,
+                            })
                             self.last_action = "contaminated"
                 else:
                     if self.person_in_frame and current_object_count == 0 and self.prev_object_count > 0:
                         if self.last_action != "cleaned":
                             self.frame_queue.put(frame)
-                            self.event_bus.publish({"type": "cleaned", "user": self.person_in_frame, "message": "cleaned plates"})
+                            self.event_bus.publish({
+                                "user": self.person_in_frame,
+                                "image": self.image,
+                                "cleaned_b": True,
+                            })
                             self.last_action = "cleaned"
 
                 self.prev_object_count = current_object_count
