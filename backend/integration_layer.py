@@ -85,6 +85,6 @@ class IntegrationLayer(threading.Thread):
                 break  # Stop the thread
             print(f"Integration layer received event: {event}")
             if event['type'] == 'user_action':
-                elf.detected_user_action(event)
+                self.detected_user_action(event)
             elif event['type'] == 'suspect_frame':
                 self.send_notifications_to_client(event['user'], event['message'])

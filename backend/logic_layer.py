@@ -124,6 +124,7 @@ class LogicLayer(threading.Thread):
                 self.prev_object_count = current_object_count
 
             if len(face_names) > 0 and self.person_in_frame != face_names[0]:
+                print("Detected Face, trying to send")
                 self.person_in_frame = face_names[0]
                 self.event_bus.publish({"type": "suspect_frame", "user": self.person_in_frame, "message": "entered the frame"})
             elif len(face_names) == 0 and self.person_in_frame is not None:
@@ -135,7 +136,6 @@ class LogicLayer(threading.Thread):
     def run(self):
         print("Layer B (AI model) started")
         while True:
-            time.sleep(8)  # Simulate time gap between frame processing
             self.recognize_faces_and_objects()
 
         self.video_capture.release()

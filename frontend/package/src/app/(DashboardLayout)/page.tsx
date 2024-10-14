@@ -115,9 +115,6 @@ const Dashboard = () => {
           <Grid item xs={12} lg={12}>
             <RoomateBlame roommates={roommates} />
           </Grid>
-          <Grid item xs={12} lg={12}>
-            <CalibrateSink />
-          </Grid>
         </Grid>
       </Box>
     </PageContainer>
